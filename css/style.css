@@ -1,0 +1,164 @@
+:root {
+  --bg: #12141c;
+  --panel: #1b1f2b;
+  --accent: #ff4d5e;
+  --accent2: #3ea0ff;
+  --text: #eef0f6;
+  --text-dim: #9aa1b4;
+  --p1: #3ea0ff;
+  --p2: #ff4d5e;
+  --good: #37d67a;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at top, #1c2030, #0c0d13 70%);
+  color: var(--text);
+  font-family: "Segoe UI", Arial, sans-serif;
+  min-height: 100vh;
+}
+
+#app { max-width: 1100px; margin: 0 auto; padding: 20px 16px 60px; }
+
+.screen { display: none; }
+.screen.active { display: block; animation: fadein .2s ease; }
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+
+.title {
+  text-align: center;
+  font-size: 2.6rem;
+  letter-spacing: 3px;
+  margin-bottom: 4px;
+  background: linear-gradient(90deg, var(--p1), var(--p2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.subtitle { text-align: center; color: var(--text-dim); margin-bottom: 30px; }
+
+.menu-buttons { display: flex; flex-direction: column; gap: 12px; max-width: 320px; margin: 0 auto; }
+
+button {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 12px 18px;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform .08s ease, filter .08s ease;
+}
+button:hover { filter: brightness(1.1); }
+button:active { transform: scale(.97); }
+button.secondary { background: #2a2f42; }
+button.danger { background: #7a1f2b; }
+button:disabled { opacity: .4; cursor: not-allowed; }
+.hidden { display: none !important; }
+
+h2 { text-align: center; }
+
+.row { display: flex; gap: 10px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+
+/* Roster */
+.roster-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px;
+  margin: 16px 0;
+}
+.roster-grid.small { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+
+.fighter-card {
+  background: var(--panel);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
+  cursor: pointer;
+}
+.fighter-card:hover { border-color: var(--accent2); }
+.fighter-card.selected { border-color: var(--good); }
+.fighter-card canvas { width: 100%; height: auto; background: #0d0f16; border-radius: 6px; }
+.fighter-card .fname { margin-top: 6px; font-weight: 600; }
+.fighter-card .fstyle { color: var(--text-dim); font-size: .8rem; }
+
+.empty-note { text-align: center; color: var(--text-dim); grid-column: 1 / -1; }
+
+/* Creator */
+.creator-layout { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; }
+.creator-preview { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.creator-preview canvas { background: #0d0f16; border-radius: 8px; }
+#fighter-name {
+  width: 100%;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #333a4f;
+  background: #0d0f16;
+  color: var(--text);
+  text-align: center;
+}
+
+.creator-panels { flex: 1; min-width: 320px; display: flex; flex-direction: column; gap: 16px; }
+.panel { background: var(--panel); border-radius: 10px; padding: 14px 16px; }
+.panel h3 { margin: 0 0 10px; font-size: 1rem; color: var(--accent2); }
+.hint { color: var(--text-dim); font-size: .8rem; margin: 8px 0 0; }
+
+.chip-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  background: #2a2f42;
+  border: 2px solid transparent;
+  border-radius: 20px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: .85rem;
+}
+.chip.active { border-color: var(--accent); background: #3a2030; }
+
+.gear-row { display: grid; grid-template-columns: 90px 1fr 46px; align-items: center; gap: 10px; margin-bottom: 10px; }
+.gear-row label { color: var(--text-dim); font-size: .85rem; }
+.gear-row select { padding: 6px; border-radius: 6px; border: 1px solid #333a4f; background: #0d0f16; color: var(--text); }
+.gear-row input[type=color] { width: 40px; height: 32px; border: none; background: none; cursor: pointer; }
+
+.move-slot { margin-bottom: 12px; }
+.move-slot label { display: block; color: var(--text-dim); font-size: .8rem; margin-bottom: 4px; }
+.move-slot select { width: 100%; padding: 7px; border-radius: 6px; border: 1px solid #333a4f; background: #0d0f16; color: var(--text); }
+.move-desc { font-size: .75rem; color: var(--text-dim); margin-top: 2px; }
+
+.stat-row { display: grid; grid-template-columns: 80px 1fr 30px; align-items: center; gap: 8px; margin-bottom: 8px; }
+.stat-row label { color: var(--text-dim); font-size: .85rem; }
+.stat-bar-bg { background: #0d0f16; border-radius: 6px; height: 10px; overflow: hidden; }
+.stat-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--good)); }
+.stat-row .stat-val { text-align: right; font-size: .8rem; color: var(--text-dim); }
+
+/* Versus select */
+.vs-select-layout { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+.vs-column { flex: 1; min-width: 280px; }
+
+/* Fight */
+#hud { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; }
+.hud-side { flex: 1; }
+.hud-side.right { direction: rtl; }
+.hud-side .name { font-weight: 700; margin-bottom: 4px; }
+.healthbar, .meterbar { background: #0d0f16; border: 1px solid #333a4f; border-radius: 6px; height: 16px; overflow: hidden; direction: ltr; }
+.meterbar { height: 8px; margin-top: 4px; }
+.health-fill { height: 100%; width: 100%; background: linear-gradient(90deg, var(--good), #a7e83a); transition: width .15s ease; }
+.meter-fill { height: 100%; width: 0%; background: var(--accent2); transition: width .15s ease; }
+.round-info { text-align: center; min-width: 120px; }
+#round-timer { font-size: 1.6rem; font-weight: 700; }
+#round-wins { color: var(--text-dim); }
+
+#fight-canvas { width: 100%; max-width: 960px; display: block; margin: 0 auto; background: linear-gradient(#2b3350, #171a26 70%); border-radius: 10px; border: 2px solid #2a2f42; }
+#fight-message { text-align: center; font-size: 1.8rem; font-weight: 700; margin-top: 10px; min-height: 40px; color: var(--accent); }
+
+/* Modal */
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.7); display: flex; align-items: center; justify-content: center; z-index: 10; }
+.modal-content { background: var(--panel); padding: 24px; border-radius: 12px; max-width: 500px; width: 90%; }
+.controls-table { width: 100%; border-collapse: collapse; margin: 14px 0; }
+.controls-table th, .controls-table td { padding: 6px 8px; border-bottom: 1px solid #2a2f42; text-align: left; }
+
+@media (max-width: 600px) {
+  .title { font-size: 1.8rem; }
+  #hud { flex-direction: column; }
+}

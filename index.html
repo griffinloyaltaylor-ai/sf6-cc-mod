@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Custom Fighter Arena</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%23ff4d5e'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- MAIN MENU -->
+    <section id="screen-menu" class="screen active">
+      <h1 class="title">CUSTOM FIGHTER ARENA</h1>
+      <p class="subtitle">Build your own roster. Fight local versus, same-screen 2P.</p>
+      <div class="menu-buttons">
+        <button data-nav="creator">Fighter Creator</button>
+        <button data-nav="roster">My Roster</button>
+        <button data-nav="versus-select">Versus Mode</button>
+        <button id="btn-how-to-play">How To Play</button>
+      </div>
+    </section>
+
+    <!-- ROSTER -->
+    <section id="screen-roster" class="screen">
+      <h2>My Roster</h2>
+      <div id="roster-grid" class="roster-grid"></div>
+      <div class="row">
+        <button data-nav="creator">+ New Fighter</button>
+        <button data-nav="menu" class="secondary">Back</button>
+      </div>
+    </section>
+
+    <!-- CREATOR -->
+    <section id="screen-creator" class="screen">
+      <h2 id="creator-heading">Fighter Creator</h2>
+      <div class="creator-layout">
+
+        <div class="creator-preview">
+          <canvas id="preview-canvas" width="260" height="360"></canvas>
+          <input id="fighter-name" type="text" maxlength="18" placeholder="Fighter name" />
+        </div>
+
+        <div class="creator-panels">
+
+          <div class="panel">
+            <h3>Fighting Style (preset)</h3>
+            <div id="style-list" class="chip-list"></div>
+            <p class="hint">Picking a style fills in a default moveset &amp; stats. You can still override any individual move below.</p>
+          </div>
+
+          <div class="panel">
+            <h3>Stats</h3>
+            <div id="stats-bars"></div>
+          </div>
+
+          <div class="panel">
+            <h3>Gear</h3>
+            <div id="gear-editor"></div>
+          </div>
+
+          <div class="panel">
+            <h3>Moveset (mix &amp; match)</h3>
+            <div id="move-editor"></div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="row">
+        <button id="btn-save-fighter">Save Fighter</button>
+        <button id="btn-duplicate-fighter" class="secondary">Duplicate</button>
+        <button id="btn-delete-fighter" class="danger">Delete</button>
+        <button data-nav="roster" class="secondary">Back to Roster</button>
+      </div>
+    </section>
+
+    <!-- VERSUS SELECT -->
+    <section id="screen-versus-select" class="screen">
+      <h2>Versus Mode &mdash; Select Fighters</h2>
+      <div class="vs-select-layout">
+        <div class="vs-column">
+          <h3>Player 1</h3>
+          <div id="p1-select" class="roster-grid small"></div>
+        </div>
+        <div class="vs-column">
+          <h3>Player 2</h3>
+          <div id="p2-select" class="roster-grid small"></div>
+        </div>
+      </div>
+      <div class="row">
+        <button id="btn-start-fight">Start Fight</button>
+        <button data-nav="menu" class="secondary">Back</button>
+      </div>
+    </section>
+
+    <!-- FIGHT -->
+    <section id="screen-fight" class="screen">
+      <div id="hud">
+        <div class="hud-side">
+          <div class="name" id="p1-name">P1</div>
+          <div class="healthbar"><div id="p1-health" class="health-fill"></div></div>
+          <div class="meterbar"><div id="p1-meter" class="meter-fill"></div></div>
+        </div>
+        <div class="round-info">
+          <div id="round-timer">99</div>
+          <div id="round-wins"><span id="p1-wins">0</span> - <span id="p2-wins">0</span></div>
+        </div>
+        <div class="hud-side right">
+          <div class="name" id="p2-name">P2</div>
+          <div class="healthbar"><div id="p2-health" class="health-fill"></div></div>
+          <div class="meterbar"><div id="p2-meter" class="meter-fill"></div></div>
+        </div>
+      </div>
+      <canvas id="fight-canvas" width="960" height="400"></canvas>
+      <div id="fight-message"></div>
+      <div class="row">
+        <button id="btn-fight-rematch" class="secondary hidden">Rematch</button>
+        <button id="btn-fight-quit" class="secondary">Quit to Menu</button>
+      </div>
+    </section>
+
+    <!-- HOW TO PLAY MODAL -->
+    <div id="howto-modal" class="modal hidden">
+      <div class="modal-content">
+        <h2>How To Play</h2>
+        <table class="controls-table">
+          <tr><th></th><th>Player 1</th><th>Player 2</th></tr>
+          <tr><td>Move</td><td>A / D</td><td>&larr; / &rarr;</td></tr>
+          <tr><td>Jump</td><td>W</td><td>&uarr;</td></tr>
+          <tr><td>Block</td><td>S (hold)</td><td>&darr; (hold)</td></tr>
+          <tr><td>Light Punch</td><td>J</td><td>1</td></tr>
+          <tr><td>Heavy Punch</td><td>K</td><td>2</td></tr>
+          <tr><td>Light Kick</td><td>U</td><td>3</td></tr>
+          <tr><td>Heavy Kick</td><td>I</td><td>4</td></tr>
+          <tr><td>Special 1</td><td>H</td><td>5</td></tr>
+          <tr><td>Special 2</td><td>Y</td><td>6</td></tr>
+          <tr><td>Super (needs full meter)</td><td>T</td><td>7</td></tr>
+        </table>
+        <p class="hint">Best of 3 rounds. Build meter by landing/taking hits. This is a shared-screen local versus &mdash; both players play on one keyboard at once.</p>
+        <button id="btn-close-howto">Close</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
