@@ -1,7 +1,16 @@
-const STAGE_LEFT = 60, STAGE_RIGHT = 900, FLOOR_Y = 330;
+const STAGE_LEFT = 60, STAGE_RIGHT = 900;
 const GRAVITY = 0.9, JUMP_V = -14.5;
 const ROUND_SECONDS = 99;
 const WINS_NEEDED = 2;
+
+// Maps the existing 2D fight-plane coordinates onto the 3D world (the
+// gameplay logic below stays 2D -- x position + jump height -- only the
+// rendering is 3D).
+const STAGE_CENTER_X = (STAGE_LEFT + STAGE_RIGHT) / 2;
+const WORLD_X_SCALE = 5 / ((STAGE_RIGHT - STAGE_LEFT) / 2);
+const WORLD_Y_SCALE = 0.022;
+function worldX(px) { return (px - STAGE_CENTER_X) * WORLD_X_SCALE; }
+function worldY(py) { return -py * WORLD_Y_SCALE; }
 
 const KEYS = {
   p1: { left: 'a', right: 'd', up: 'w', down: 's', lightPunch: 'j', heavyPunch: 'k', lightKick: 'u', heavyKick: 'i', special1: 'h', special2: 'y', super: 't' },
@@ -18,7 +27,8 @@ const PAD_BUTTON_MAP = {
 const PAD_DEADZONE = 0.4;
 const EMPTY_PAD_INPUT = { left: false, right: false, up: false, down: false, lightPunch: false, heavyPunch: false, lightKick: false, heavyKick: false, special1: false, special2: false, super: false };
 
-let ctx, canvas;
+let canvas;
+let fightScene = null;
 let els = {};
 let p1, p2;
 let keysDown = new Set();
@@ -49,11 +59,14 @@ function createPlayer(fighter, x, facing) {
   };
 }
 
-function initFight(fighter1, fighter2, domEls, matchEndCallback) {
+function initFight(fighter1, fighter2, domEls, arenaId, matchEndCallback) {
   els = domEls;
   onMatchEnd = matchEndCallback;
   canvas = els.canvas;
-  ctx = canvas.getContext('2d');
+  if (!fightScene) fightScene = createFightScene(canvas);
+  fightScene.setArena(arenaId || 'dojo');
+  fightScene.rigP1.build(fighter1);
+  fightScene.rigP2.build(fighter2);
   matchWins = { p1: 0, p2: 0 };
   els.p1Name.textContent = fighter1.name;
   els.p2Name.textContent = fighter2.name;
@@ -157,20 +170,30 @@ function tryAttackFromPad(player, padInput, prevPadInput) {
   }
 }
 
+// All per-frame constants below (speed, gravity, timers) were tuned
+// assuming a steady 60fps. `fdt` (frame-delta = elapsed-seconds * 60) lets
+// the same tuning hold up when the actual frame rate differs -- important
+// since the 3D scene is heavier to render than flat 2D was.
+let lastFrameTime = 0;
+
 function startLoop() {
   if (rafId) cancelAnimationFrame(rafId);
-  function frame() {
-    animT += 2;
-    update();
+  lastFrameTime = performance.now();
+  function frame(now) {
+    const dtSeconds = Math.min((now - lastFrameTime) / 1000, 1 / 20);
+    lastFrameTime = now;
+    const fdt = dtSeconds * 60;
+    animT += 2 * fdt;
+    update(fdt);
     render();
     rafId = requestAnimationFrame(frame);
   }
-  frame();
+  rafId = requestAnimationFrame(frame);
 }
 
 function isDown(player, map, padInput) { return keysDown.has(map.down) || (padInput && padInput.down); }
 
-function updatePlayerMovement(player, other, map, padInput) {
+function updatePlayerMovement(player, other, map, padInput, fdt) {
   const canAct = player.state !== 'attack' && player.state !== 'hitstun' && player.state !== 'ko';
   // auto-face opponent unless mid-action
   if (canAct) player.facing = other.x >= player.x ? 1 : -1;
@@ -185,7 +208,7 @@ function updatePlayerMovement(player, other, map, padInput) {
     if (!player.grounded) {
       player.state = 'jump';
     } else if (left || right) {
-      const speed = 2.6 * (player.fighter.stats.speed / 75);
+      const speed = 2.6 * (player.fighter.stats.speed / 75) * fdt;
       player.x += (left ? -speed : speed);
       player.state = 'walk';
     } else {
@@ -199,8 +222,8 @@ function updatePlayerMovement(player, other, map, padInput) {
   }
 
   // gravity
-  player.vy += GRAVITY;
-  player.y += player.vy;
+  player.vy += GRAVITY * fdt;
+  player.y += player.vy * fdt;
   if (player.y >= 0) { player.y = 0; player.vy = 0; player.grounded = true; }
 
   player.x = Math.max(STAGE_LEFT, Math.min(STAGE_RIGHT, player.x));
@@ -219,10 +242,10 @@ function separatePlayers() {
   }
 }
 
-function updateAttack(player, other) {
+function updateAttack(player, other, fdt) {
   if (player.state !== 'attack' || !player.attack) return;
   const atk = player.attack;
-  atk.timer--;
+  atk.timer -= fdt;
   if (atk.timer <= 0) {
     if (atk.phase === 'startup') { atk.phase = 'active'; atk.timer = atk.move.active; }
     else if (atk.phase === 'active') { atk.phase = 'recovery'; atk.timer = atk.move.recovery; }
@@ -276,16 +299,16 @@ function resolveHit(attacker, defender, atk) {
   }
 }
 
-function updateHitstun(player) {
+function updateHitstun(player, fdt) {
   if (player.state === 'hitstun' || player.state === 'block') {
     if (player.hitstunTimer > 0) {
-      player.hitstunTimer--;
+      player.hitstunTimer -= fdt;
       if (player.hitstunTimer <= 0 && player.state === 'hitstun') player.state = 'idle';
     }
   }
 }
 
-function update() {
+function update(fdt) {
   if (!roundActive) return;
 
   const pad = readActiveGamepad();
@@ -295,21 +318,21 @@ function update() {
     if (els.p2Mode) els.p2Mode.textContent = p2UsingPad ? 'Controller' : 'Keyboard';
   }
 
-  updatePlayerMovement(p1, p2, KEYS.p1, null);
-  updatePlayerMovement(p2, p1, KEYS.p2, pad2Input);
+  updatePlayerMovement(p1, p2, KEYS.p1, null, fdt);
+  updatePlayerMovement(p2, p1, KEYS.p2, pad2Input, fdt);
   tryAttackFromPad(p2, pad2Input, prevPad2Input);
   prevPad2Input = pad2Input;
   separatePlayers();
-  updateAttack(p1, p2);
-  updateAttack(p2, p1);
-  updateHitstun(p1);
-  updateHitstun(p2);
+  updateAttack(p1, p2, fdt);
+  updateAttack(p2, p1, fdt);
+  updateHitstun(p1, fdt);
+  updateHitstun(p2, fdt);
 
   // block state needs continuous down-hold to persist; drop to idle if released and no hitstun timer
   if (p1.state === 'block' && !isDown(p1, KEYS.p1, null) && p1.hitstunTimer <= 0) p1.state = 'idle';
   if (p2.state === 'block' && !isDown(p2, KEYS.p2, pad2Input) && p2.hitstunTimer <= 0) p2.state = 'idle';
 
-  timerFrames--;
+  timerFrames -= fdt;
   const secs = Math.max(0, Math.ceil(timerFrames / 60));
   els.timer.textContent = String(secs);
   if (timerFrames <= 0) {
@@ -363,22 +386,13 @@ function poseFor(player) {
 }
 
 function render() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  // floor line
-  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-  ctx.beginPath();
-  ctx.moveTo(0, FLOOR_Y + 2);
-  ctx.lineTo(canvas.width, FLOOR_Y + 2);
-  ctx.stroke();
-
-  [p1, p2].forEach(pl => {
-    ctx.save();
-    ctx.globalAlpha = 0.3;
-    ctx.fillStyle = 'black';
-    ctx.beginPath();
-    ctx.ellipse(pl.x, FLOOR_Y + 6, 26, 6, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-    drawFighter(ctx, pl.fighter, pl.x, FLOOR_Y + pl.y, { scale: 1.15, facing: pl.facing, poseName: poseFor(pl), t: animT });
-  });
+  const w1x = worldX(p1.x), w2x = worldX(p2.x);
+  fightScene.rigP1.setFacing(p1.facing);
+  fightScene.rigP1.setWorldPosition(w1x, worldY(p1.y), 0);
+  fightScene.rigP1.setPose(poseFor(p1), animT);
+  fightScene.rigP2.setFacing(p2.facing);
+  fightScene.rigP2.setWorldPosition(w2x, worldY(p2.y), 0);
+  fightScene.rigP2.setPose(poseFor(p2), animT);
+  fightScene.updateCamera(w1x, w2x);
+  fightScene.render(animT / 60);
 }

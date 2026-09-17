@@ -6,7 +6,7 @@ function buildCard(fighter) {
   const canvas = document.createElement('canvas');
   canvas.width = 140; canvas.height = 170;
   const ctx = canvas.getContext('2d');
-  drawFighter(ctx, fighter, canvas.width / 2, canvas.height - 10, { scale: 0.9, facing: 1, poseName: 'idle', t: 0 });
+  renderFighterThumbnail(fighter, ctx, canvas.width, canvas.height);
 
   const name = document.createElement('div');
   name.className = 'fname';

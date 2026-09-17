@@ -106,6 +106,7 @@ h2 { text-align: center; }
 .hint { color: var(--text-dim); font-size: .8rem; margin: 8px 0 0; }
 
 .chip-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip-list.centered { justify-content: center; margin-bottom: 10px; }
 .chip {
   background: #2a2f42;
   border: 2px solid transparent;

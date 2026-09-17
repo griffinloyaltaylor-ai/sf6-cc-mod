@@ -1,5 +1,5 @@
 let currentScreen = 'menu';
-let vsSelection = { p1: null, p2: null };
+let vsSelection = { p1: null, p2: null, arena: ARENA_LIST[0].id };
 
 function showScreen(name) {
   if (currentScreen === 'creator' && name !== 'creator') stopPreviewLoop();
@@ -26,6 +26,17 @@ function refreshVersusSelect() {
   const p2grid = document.getElementById('p2-select');
   renderVersusSelectGrid(p1grid, id => { vsSelection.p1 = id; refreshVersusSelect(); }, vsSelection.p1);
   renderVersusSelectGrid(p2grid, id => { vsSelection.p2 = id; refreshVersusSelect(); }, vsSelection.p2);
+
+  const arenaList = document.getElementById('arena-list');
+  arenaList.innerHTML = '';
+  ARENA_LIST.forEach(arena => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (vsSelection.arena === arena.id ? ' active' : '');
+    chip.textContent = arena.name;
+    chip.addEventListener('click', () => { vsSelection.arena = arena.id; refreshVersusSelect(); });
+    arenaList.appendChild(chip);
+  });
+
   const startBtn = document.getElementById('btn-start-fight');
   startBtn.disabled = !(vsSelection.p1 && vsSelection.p2);
 }
@@ -51,7 +62,7 @@ function startFightFromSelection() {
     message: document.getElementById('fight-message'),
     rematchBtn: document.getElementById('btn-fight-rematch'),
   };
-  initFight(f1, f2, domEls);
+  initFight(f1, f2, domEls, vsSelection.arena);
 }
 
 function bindNav() {

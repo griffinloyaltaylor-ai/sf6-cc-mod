@@ -2,6 +2,10 @@ let current = null;
 let isNew = true;
 let previewT = 0;
 let previewRafId = null;
+let previewScene = null;
+let previewDirty = true;
+
+function markPreviewDirty() { previewDirty = true; }
 
 const GEAR_LABELS = { head: 'Head', body: 'Body', hands: 'Hands', feet: 'Feet', accessory: 'Accessory' };
 const STAT_LABELS = { health: 'Health', speed: 'Speed', power: 'Power', defense: 'Defense' };
@@ -19,6 +23,7 @@ function openCreator(fighterId, onLeave) {
   document.getElementById('creator-heading').textContent = isNew ? 'Create New Fighter' : 'Edit Fighter';
   document.getElementById('btn-duplicate-fighter').disabled = isNew;
   document.getElementById('btn-delete-fighter').disabled = isNew;
+  previewDirty = true;
   renderAll();
   startPreviewLoop();
   bindOnce();
@@ -29,12 +34,19 @@ let leaveCallback = null;
 
 function startPreviewLoop() {
   stopPreviewLoop();
-  const canvas = document.getElementById('preview-canvas');
-  const ctx = canvas.getContext('2d');
+  if (!previewScene) {
+    const canvas = document.getElementById('preview-canvas');
+    previewScene = createPreviewScene(canvas);
+  }
   function frame() {
     previewT += 2;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawFighter(ctx, current, canvas.width / 2, canvas.height - 20, { scale: 1.5, facing: 1, poseName: 'idle', t: previewT });
+    if (previewDirty) {
+      previewScene.rig.build(current);
+      previewDirty = false;
+    }
+    previewScene.rig.root.rotation.y = 0.5 + Math.sin(previewT / 400) * 0.5;
+    previewScene.rig.setPose('idle', previewT);
+    previewScene.render();
     previewRafId = requestAnimationFrame(frame);
   }
   frame();
@@ -80,6 +92,7 @@ function renderBuild() {
     input.addEventListener('input', () => {
       current.appearance.build[key] = Number(input.value);
       valSpan.textContent = Math.round(input.value * 100) + '%';
+      markPreviewDirty();
     });
     bgWrap.appendChild(input);
     row.appendChild(label);
@@ -101,6 +114,7 @@ function renderStyleChips() {
       current.styleId = style.id;
       current.stats = { ...style.stats };
       current.moves = { ...style.moves };
+      markPreviewDirty();
       renderAll();
     });
     el.appendChild(chip);
@@ -155,6 +169,7 @@ function renderGear() {
     });
     select.addEventListener('change', () => {
       current.appearance.gear[slot].type = select.value;
+      markPreviewDirty();
     });
 
     const color = document.createElement('input');
@@ -162,6 +177,7 @@ function renderGear() {
     color.value = current.appearance.gear[slot].color;
     color.addEventListener('input', () => {
       current.appearance.gear[slot].color = color.value;
+      markPreviewDirty();
     });
 
     row.appendChild(label);
@@ -178,7 +194,7 @@ function renderGear() {
   const skinColor = document.createElement('input');
   skinColor.type = 'color';
   skinColor.value = current.appearance.skinTone;
-  skinColor.addEventListener('input', () => { current.appearance.skinTone = skinColor.value; });
+  skinColor.addEventListener('input', () => { current.appearance.skinTone = skinColor.value; markPreviewDirty(); });
   skinRow.appendChild(skinSelectPlaceholder);
   skinRow.appendChild(skinColor);
   el.appendChild(skinRow);
@@ -190,7 +206,7 @@ function renderGear() {
   const hairColor = document.createElement('input');
   hairColor.type = 'color';
   hairColor.value = current.appearance.hair.color;
-  hairColor.addEventListener('input', () => { current.appearance.hair.color = hairColor.value; });
+  hairColor.addEventListener('input', () => { current.appearance.hair.color = hairColor.value; markPreviewDirty(); });
   hairRow.appendChild(hairPlaceholder);
   hairRow.appendChild(hairColor);
   el.appendChild(hairRow);
