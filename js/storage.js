@@ -12,6 +12,7 @@ function defaultFighter() {
     appearance: {
       skinTone: '#e0ac69',
       hair: { style: 'short', color: '#2b2013' },
+      build: { height: 1, width: 1 },
       gear: {
         head: { type: 'none', color: '#cc3333' },
         body: { type: 'gi', color: '#3355cc' },

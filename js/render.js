@@ -39,14 +39,17 @@ function pose(poseName, t) {
 
 function drawFighter(ctx, fighter, x, groundY, opts = {}) {
   const { scale = 1, facing = 1, poseName = 'idle', t = 0, tint = null } = opts;
-  const { skinTone, hair, gear } = fighter.appearance;
+  const { skinTone, hair, gear, build } = fighter.appearance;
+  const heightMul = (build && build.height) || 1;
+  const widthMul = (build && build.width) || 1;
   const p = pose(poseName, t);
 
   ctx.save();
   ctx.translate(x, groundY);
   ctx.scale(facing * scale, scale);
 
-  const legLen = 60, torsoLen = 55, armLen = 45, headR = 16;
+  const legLen = 60 * heightMul, torsoLen = 55 * heightMul, armLen = 45 * heightMul, headR = 16 * (0.88 + widthMul * 0.12);
+  const legWidth = 16 * widthMul, armWidth = 11 * widthMul, torsoWidth = 28 * widthMul;
   const crouch = p.crouch;
   const hipY = -legLen + crouch;
   const shoulderY = hipY - torsoLen + crouch * 0.3;
@@ -57,22 +60,22 @@ function drawFighter(ctx, fighter, x, groundY, opts = {}) {
   ctx.lineJoin = 'round';
 
   // back leg
-  drawLimb(ctx, 0, hipY, p.legR, legLen, 16, shade(skinTone, -20));
+  drawLimb(ctx, 0, hipY, p.legR, legLen, legWidth, shade(skinTone, -20));
   // back arm
-  drawLimb(ctx, lean * 0.3, shoulderY, p.armR, armLen, 11, shade(skinTone, -20));
+  drawLimb(ctx, lean * 0.3, shoulderY, p.armR, armLen, armWidth, shade(skinTone, -20));
 
   // torso
   ctx.fillStyle = tint || gear.body.color;
-  roundRect(ctx, -14 + lean * 0.3, shoulderY, 28, torsoLen, 8);
+  roundRect(ctx, -torsoWidth / 2 + lean * 0.3, shoulderY, torsoWidth, torsoLen, 8);
   ctx.fill();
-  drawBodyDetail(ctx, gear.body.type, -14 + lean * 0.3, shoulderY, 28, torsoLen, tint || gear.body.color);
+  drawBodyDetail(ctx, gear.body.type, -torsoWidth / 2 + lean * 0.3, shoulderY, torsoWidth, torsoLen, tint || gear.body.color);
 
   // front leg
-  drawLimb(ctx, 0, hipY, p.legL, legLen, 16, skinTone);
+  drawLimb(ctx, 0, hipY, p.legL, legLen, legWidth, skinTone);
   drawFeet(ctx, gear.feet, 0, hipY, p.legL, legLen);
 
   // front arm
-  drawLimb(ctx, lean * 0.3, shoulderY, p.armL, armLen, 11, skinTone);
+  drawLimb(ctx, lean * 0.3, shoulderY, p.armL, armLen, armWidth, skinTone);
   drawHands(ctx, gear.hands, lean * 0.3, shoulderY, p.armL, armLen);
 
   // accessory (behind head layer for cape, belt already covered by torso)

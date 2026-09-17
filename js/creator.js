@@ -15,6 +15,7 @@ function openCreator(fighterId, onLeave) {
     current = defaultFighter();
     isNew = true;
   }
+  if (!current.appearance.build) current.appearance.build = { height: 1, width: 1 };
   document.getElementById('creator-heading').textContent = isNew ? 'Create New Fighter' : 'Edit Fighter';
   document.getElementById('btn-duplicate-fighter').disabled = isNew;
   document.getElementById('btn-delete-fighter').disabled = isNew;
@@ -48,8 +49,44 @@ function renderAll() {
   document.getElementById('fighter-name').value = current.name;
   renderStyleChips();
   renderStats();
+  renderBuild();
   renderGear();
   renderMoves();
+}
+
+const BUILD_LABELS = { height: 'Height', width: 'Build' };
+const BUILD_RANGE = { height: { min: 0.85, max: 1.18 }, width: { min: 0.8, max: 1.3 } };
+
+function renderBuild() {
+  const el = document.getElementById('build-sliders');
+  el.innerHTML = '';
+  Object.keys(BUILD_LABELS).forEach(key => {
+    const row = document.createElement('div');
+    row.className = 'stat-row';
+    const label = document.createElement('label');
+    label.textContent = BUILD_LABELS[key];
+    const bgWrap = document.createElement('div');
+    bgWrap.className = 'stat-bar-bg';
+    const input = document.createElement('input');
+    input.type = 'range';
+    input.min = String(BUILD_RANGE[key].min);
+    input.max = String(BUILD_RANGE[key].max);
+    input.step = '0.01';
+    input.value = String(current.appearance.build[key]);
+    input.style.width = '100%';
+    const valSpan = document.createElement('span');
+    valSpan.className = 'stat-val';
+    valSpan.textContent = Math.round(current.appearance.build[key] * 100) + '%';
+    input.addEventListener('input', () => {
+      current.appearance.build[key] = Number(input.value);
+      valSpan.textContent = Math.round(input.value * 100) + '%';
+    });
+    bgWrap.appendChild(input);
+    row.appendChild(label);
+    row.appendChild(bgWrap);
+    row.appendChild(valSpan);
+    el.appendChild(row);
+  });
 }
 
 function renderStyleChips() {
