@@ -1,17 +1,12 @@
-import { MOVES, movesForSlot, SLOTS, SLOT_LABELS } from './data/moves.js';
-import { STYLE_LIST, STYLES } from './data/styles.js';
-import { GEAR_OPTIONS, drawFighter } from './render.js';
-import { defaultFighter, saveFighter, deleteFighter, duplicateFighter, getFighter } from './storage.js';
-
 let current = null;
 let isNew = true;
 let previewT = 0;
-let rafId = null;
+let previewRafId = null;
 
 const GEAR_LABELS = { head: 'Head', body: 'Body', hands: 'Hands', feet: 'Feet', accessory: 'Accessory' };
 const STAT_LABELS = { health: 'Health', speed: 'Speed', power: 'Power', defense: 'Defense' };
 
-export function openCreator(fighterId, onLeave) {
+function openCreator(fighterId, onLeave) {
   if (fighterId) {
     const found = getFighter(fighterId);
     current = found ? JSON.parse(JSON.stringify(found)) : defaultFighter();
@@ -39,14 +34,14 @@ function startPreviewLoop() {
     previewT += 2;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawFighter(ctx, current, canvas.width / 2, canvas.height - 20, { scale: 1.5, facing: 1, poseName: 'idle', t: previewT });
-    rafId = requestAnimationFrame(frame);
+    previewRafId = requestAnimationFrame(frame);
   }
   frame();
 }
 
-export function stopPreviewLoop() {
-  if (rafId) cancelAnimationFrame(rafId);
-  rafId = null;
+function stopPreviewLoop() {
+  if (previewRafId) cancelAnimationFrame(previewRafId);
+  previewRafId = null;
 }
 
 function renderAll() {
@@ -244,6 +239,6 @@ function flashSaved() {
   setTimeout(() => { btn.textContent = original; }, 900);
 }
 
-export function getCurrentFighter() {
+function getCurrentFighter() {
   return current;
 }

@@ -5,7 +5,7 @@
 //
 // Frame data is in game-ticks (60/sec), range/knockback in game units.
 
-export const MOVES = {
+const MOVES = {
 
   // ---- Light Punch ----
   lp_jab:      { id:'lp_jab',      slot:'lightPunch', name:'Jab',            damage:4,  startup:3, active:3, recovery:6,  range:46, knockback:3,  meterGain:3, desc:'Fast, safe poke.' },
@@ -48,13 +48,13 @@ export const MOVES = {
   su_annihilate:  { id:'su_annihilate',  slot:'super', name:'Annihilate',        damage:44, startup:14, active:6,  recovery:26, range:38,  knockback:26, meterCost:100, unblockable:true, desc:'Unblockable grab-super, huge damage.' },
 };
 
-export function movesForSlot(slot) {
+function movesForSlot(slot) {
   return Object.values(MOVES).filter(m => m.slot === slot);
 }
 
-export const SLOTS = ['lightPunch', 'heavyPunch', 'lightKick', 'heavyKick', 'special1', 'special2', 'super'];
+const SLOTS = ['lightPunch', 'heavyPunch', 'lightKick', 'heavyKick', 'special1', 'special2', 'super'];
 
-export const SLOT_LABELS = {
+const SLOT_LABELS = {
   lightPunch: 'Light Punch',
   heavyPunch: 'Heavy Punch',
   lightKick: 'Light Kick',

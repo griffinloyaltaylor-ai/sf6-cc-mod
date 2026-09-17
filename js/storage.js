@@ -4,7 +4,7 @@ function uid() {
   return 'f_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
 
-export function defaultFighter() {
+function defaultFighter() {
   return {
     id: uid(),
     name: 'New Fighter',
@@ -44,15 +44,15 @@ function writeAll(list) {
   localStorage.setItem(KEY, JSON.stringify(list));
 }
 
-export function getRoster() {
+function getRoster() {
   return readAll();
 }
 
-export function getFighter(id) {
+function getFighter(id) {
   return readAll().find(f => f.id === id) || null;
 }
 
-export function saveFighter(fighter) {
+function saveFighter(fighter) {
   const list = readAll();
   const idx = list.findIndex(f => f.id === fighter.id);
   if (idx >= 0) list[idx] = fighter;
@@ -61,12 +61,12 @@ export function saveFighter(fighter) {
   return fighter;
 }
 
-export function deleteFighter(id) {
+function deleteFighter(id) {
   const list = readAll().filter(f => f.id !== id);
   writeAll(list);
 }
 
-export function duplicateFighter(id) {
+function duplicateFighter(id) {
   const original = getFighter(id);
   if (!original) return null;
   const copy = JSON.parse(JSON.stringify(original));

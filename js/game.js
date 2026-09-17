@@ -1,6 +1,3 @@
-import { MOVES } from './data/moves.js';
-import { drawFighter } from './render.js';
-
 const STAGE_LEFT = 60, STAGE_RIGHT = 900, FLOOR_Y = 330;
 const GRAVITY = 0.9, JUMP_V = -14.5;
 const ROUND_SECONDS = 99;
@@ -52,7 +49,7 @@ function createPlayer(fighter, x, facing) {
   };
 }
 
-export function initFight(fighter1, fighter2, domEls, matchEndCallback) {
+function initFight(fighter1, fighter2, domEls, matchEndCallback) {
   els = domEls;
   onMatchEnd = matchEndCallback;
   canvas = els.canvas;
@@ -85,7 +82,7 @@ export function initFight(fighter1, fighter2, domEls, matchEndCallback) {
   startLoop();
 }
 
-export function stopFight() {
+function stopFight() {
   if (rafId) cancelAnimationFrame(rafId);
   rafId = null;
   if (keydownHandler) window.removeEventListener('keydown', keydownHandler);
@@ -120,7 +117,7 @@ function readPadInput(pad) {
   };
 }
 
-export function rematch() {
+function rematch() {
   setupRound(p1.fighter, p2.fighter);
   matchWins = { p1: 0, p2: 0 };
   els.p1Wins.textContent = '0';

@@ -11,13 +11,12 @@ not use or depend on Street Fighter 6 or any Capcom assets.
 
 ## Running it
 
-No build step or dependencies. From the project root:
+No build step, no dependencies, no server required — just double-click
+`index.html` (or open it via your browser's File > Open) and play.
 
-```
-python3 -m http.server 8080
-```
-
-Then open `http://localhost:8080` in a browser.
+If you'd rather serve it (e.g. for testing on another device on your
+network), any static file server works, for example `python3 -m http.server
+8080` or `npx serve .`, then visit the printed URL. This is optional.
 
 ## Features
 

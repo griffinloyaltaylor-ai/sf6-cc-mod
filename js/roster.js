@@ -1,7 +1,3 @@
-import { getRoster } from './storage.js';
-import { drawFighter } from './render.js';
-import { STYLES } from './data/styles.js';
-
 function buildCard(fighter) {
   const card = document.createElement('div');
   card.className = 'fighter-card';
@@ -26,7 +22,7 @@ function buildCard(fighter) {
   return card;
 }
 
-export function renderRosterEditGrid(container, onPick) {
+function renderRosterEditGrid(container, onPick) {
   container.innerHTML = '';
   const roster = getRoster();
   if (roster.length === 0) {
@@ -43,7 +39,7 @@ export function renderRosterEditGrid(container, onPick) {
   });
 }
 
-export function renderVersusSelectGrid(container, onPick, selectedId) {
+function renderVersusSelectGrid(container, onPick, selectedId) {
   container.innerHTML = '';
   const roster = getRoster();
   if (roster.length === 0) {

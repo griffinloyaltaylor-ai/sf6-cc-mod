@@ -2,7 +2,7 @@
 // No third-party art/sprites -- everything is procedural shapes so it's
 // safe original content (not derived from any existing game's assets).
 
-export const GEAR_OPTIONS = {
+const GEAR_OPTIONS = {
   head: ['none', 'helmet', 'mask', 'bandana', 'cap', 'hood'],
   body: ['gi', 'jacket', 'tanktop', 'armor', 'coat'],
   hands: ['bare', 'wraps', 'gloves', 'gauntlets'],
@@ -37,7 +37,7 @@ function pose(poseName, t) {
   }
 }
 
-export function drawFighter(ctx, fighter, x, groundY, opts = {}) {
+function drawFighter(ctx, fighter, x, groundY, opts = {}) {
   const { scale = 1, facing = 1, poseName = 'idle', t = 0, tint = null } = opts;
   const { skinTone, hair, gear } = fighter.appearance;
   const p = pose(poseName, t);

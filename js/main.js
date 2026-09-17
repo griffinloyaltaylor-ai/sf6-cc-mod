@@ -1,8 +1,3 @@
-import { openCreator, stopPreviewLoop } from './creator.js';
-import { renderRosterEditGrid, renderVersusSelectGrid } from './roster.js';
-import { getFighter } from './storage.js';
-import { initFight, stopFight, rematch } from './game.js';
-
 let currentScreen = 'menu';
 let vsSelection = { p1: null, p2: null };
 

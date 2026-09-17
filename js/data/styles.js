@@ -2,7 +2,7 @@
 // Selecting a style just pre-fills the creator; every move can still be
 // individually overridden afterwards ("mix and match").
 
-export const STYLES = {
+const STYLES = {
   rushdown: {
     id: 'rushdown',
     name: 'Rushdown',
@@ -65,4 +65,4 @@ export const STYLES = {
   },
 };
 
-export const STYLE_LIST = Object.values(STYLES);
+const STYLE_LIST = Object.values(STYLES);
