@@ -1,5 +1,6 @@
 let currentScreen = 'menu';
-let vsSelection = { p1: null, p2: null, arena: ARENA_LIST[0].id };
+let vsSelection = { p1: null, p2: null, arena: ARENA_LIST[0].id, p2Control: 'human' };
+const P2_CONTROL_OPTIONS = [['human', 'Human'], ['easy', 'CPU: Easy'], ['medium', 'CPU: Medium'], ['hard', 'CPU: Hard']];
 
 function showScreen(name) {
   if (currentScreen === 'creator' && name !== 'creator') stopPreviewLoop();
@@ -26,6 +27,16 @@ function refreshVersusSelect() {
   const p2grid = document.getElementById('p2-select');
   renderVersusSelectGrid(p1grid, id => { vsSelection.p1 = id; refreshVersusSelect(); }, vsSelection.p1);
   renderVersusSelectGrid(p2grid, id => { vsSelection.p2 = id; refreshVersusSelect(); }, vsSelection.p2);
+
+  const p2ControlList = document.getElementById('p2-control-list');
+  p2ControlList.innerHTML = '';
+  P2_CONTROL_OPTIONS.forEach(([id, label]) => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (vsSelection.p2Control === id ? ' active' : '');
+    chip.textContent = label;
+    chip.addEventListener('click', () => { vsSelection.p2Control = id; refreshVersusSelect(); });
+    p2ControlList.appendChild(chip);
+  });
 
   const arenaList = document.getElementById('arena-list');
   arenaList.innerHTML = '';
@@ -62,7 +73,8 @@ function startFightFromSelection() {
     message: document.getElementById('fight-message'),
     rematchBtn: document.getElementById('btn-fight-rematch'),
   };
-  initFight(f1, f2, domEls, vsSelection.arena);
+  const p2Difficulty = vsSelection.p2Control === 'human' ? null : vsSelection.p2Control;
+  initFight(f1, f2, domEls, vsSelection.arena, null, p2Difficulty);
 }
 
 function bindNav() {

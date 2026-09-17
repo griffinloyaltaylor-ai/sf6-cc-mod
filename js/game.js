@@ -26,6 +26,16 @@ const PAD_BUTTON_MAP = {
 };
 const PAD_DEADZONE = 0.4;
 const EMPTY_PAD_INPUT = { left: false, right: false, up: false, down: false, lightPunch: false, heavyPunch: false, lightKick: false, heavyKick: false, special1: false, special2: false, super: false };
+const NO_KEYS = {}; // a key-map with nothing bound, so a CPU player ignores stray real key presses
+
+// Difficulty just scales reaction speed and how often the CPU makes the
+// "right" call (attacking in range, blocking an incoming hit) vs a mistake.
+const CPU_PROFILES = {
+  easy: { reactionFrames: 42, attackChance: 0.22, blockChance: 0.12, specialChance: 0.06, approachSpeedMul: 0.85 },
+  medium: { reactionFrames: 22, attackChance: 0.42, blockChance: 0.38, specialChance: 0.16, approachSpeedMul: 1.0 },
+  hard: { reactionFrames: 9, attackChance: 0.62, blockChance: 0.68, specialChance: 0.3, approachSpeedMul: 1.12 },
+};
+const CPU_NORMAL_SLOTS = ['lightPunch', 'heavyPunch', 'lightKick', 'heavyKick'];
 
 let canvas;
 let fightScene = null;
@@ -41,12 +51,13 @@ let onMatchEnd = null;
 let keydownHandler, keyupHandler;
 let prevPad2Input = EMPTY_PAD_INPUT;
 let p2UsingPad = false;
+let p1CPUDifficulty = null, p2CPUDifficulty = null;
 
 function maxHealthFor(fighter) {
   return Math.round(fighter.stats.health * 3);
 }
 
-function createPlayer(fighter, x, facing) {
+function createPlayer(fighter, x, facing, cpuDifficulty) {
   return {
     fighter, x, y: 0, vy: 0, facing,
     state: 'idle', // idle, walk, jump, block, attack, hitstun, ko
@@ -56,13 +67,63 @@ function createPlayer(fighter, x, facing) {
     meter: 0,
     attack: null,
     hitstunTimer: 0,
+    isCPU: !!cpuDifficulty,
+    cpuDifficulty: cpuDifficulty || null,
+    cpuTimer: 0,
+    cpuInput: EMPTY_PAD_INPUT,
   };
 }
 
-function initFight(fighter1, fighter2, domEls, arenaId, matchEndCallback) {
+// Produces a padInput-shaped object (same shape readPadInput returns) from
+// simple distance/state rules, scaled by the difficulty profile. Feeding it
+// through the same movement code path real input uses means no separate
+// AI-specific movement logic has to be maintained. Attacks are fired
+// directly (one-shot, right when decided) rather than represented as a
+// held flag, since a held flag re-checked every frame against a "previous"
+// snapshot of itself has a real edge case: two consecutive reaction ticks
+// that happen to choose the same attack slot would look like one long
+// held press and silently never re-trigger.
+function computeCPUInput(player, other, fdt) {
+  const profile = CPU_PROFILES[player.cpuDifficulty] || CPU_PROFILES.medium;
+  player.cpuTimer -= fdt;
+  if (player.cpuTimer > 0) return player.cpuInput;
+
+  player.cpuTimer = profile.reactionFrames * (0.7 + Math.random() * 0.6);
+  const dist = other.x - player.x;
+  const absDist = Math.abs(dist);
+  const dir = dist >= 0 ? 1 : -1;
+  const next = { left: false, right: false, up: false, down: false };
+
+  const opponentSwinging = other.state === 'attack' && other.attack && (other.attack.phase === 'startup' || other.attack.phase === 'active');
+  const canAttack = player.state !== 'attack' && player.state !== 'hitstun' && player.state !== 'ko';
+  // Ranges below must be contiguous (no gap between the "approach" and
+  // "in range" cases) -- a gap there means the CPU can stall at a distance
+  // where every branch is false and it just stands still forever.
+  if (opponentSwinging && absDist < 95 && Math.random() < profile.blockChance) {
+    next.down = true;
+  } else if (absDist > 65) {
+    if (dir > 0) next.right = true; else next.left = true;
+  } else if (absDist < 32 && Math.random() < 0.3) {
+    if (dir > 0) next.left = true; else next.right = true; // step back off
+  } else if (canAttack && Math.random() < profile.attackChance) {
+    let slot;
+    if (player.meter >= 100 && Math.random() < profile.specialChance * 0.4) slot = 'super';
+    else if (Math.random() < profile.specialChance) slot = Math.random() < 0.5 ? 'special1' : 'special2';
+    else slot = CPU_NORMAL_SLOTS[Math.floor(Math.random() * CPU_NORMAL_SLOTS.length)];
+    startAttackForSlot(player, slot);
+  }
+  if (player.grounded && absDist < 90 && Math.random() < 0.04) next.up = true;
+
+  player.cpuInput = next;
+  return next;
+}
+
+function initFight(fighter1, fighter2, domEls, arenaId, p1Difficulty, p2Difficulty, matchEndCallback) {
   els = domEls;
   onMatchEnd = matchEndCallback;
   canvas = els.canvas;
+  p1CPUDifficulty = p1Difficulty || null;
+  p2CPUDifficulty = p2Difficulty || null;
   if (!fightScene) fightScene = createFightScene(canvas);
   fightScene.setArena(arenaId || 'dojo');
   fightScene.rigP1.build(fighter1);
@@ -74,9 +135,9 @@ function initFight(fighter1, fighter2, domEls, arenaId, matchEndCallback) {
   els.p2Wins.textContent = '0';
   els.rematchBtn.classList.add('hidden');
   els.message.textContent = '';
-  if (els.p1Mode) els.p1Mode.textContent = 'Keyboard';
+  if (els.p1Mode) els.p1Mode.textContent = p1CPUDifficulty ? 'CPU (' + p1CPUDifficulty + ')' : 'Keyboard';
   p2UsingPad = !!readActiveGamepad();
-  if (els.p2Mode) els.p2Mode.textContent = p2UsingPad ? 'Controller' : 'Keyboard';
+  if (els.p2Mode) els.p2Mode.textContent = p2CPUDifficulty ? 'CPU (' + p2CPUDifficulty + ')' : (p2UsingPad ? 'Controller' : 'Keyboard');
 
   setupRound(fighter1, fighter2);
 
@@ -84,8 +145,8 @@ function initFight(fighter1, fighter2, domEls, arenaId, matchEndCallback) {
     const k = e.key.toLowerCase();
     keysDown.add(k);
     if (!roundActive) return;
-    tryAttack(p1, k, KEYS.p1);
-    tryAttack(p2, k, KEYS.p2);
+    if (!p1.isCPU) tryAttack(p1, k, KEYS.p1);
+    if (!p2.isCPU) tryAttack(p2, k, KEYS.p2);
   };
   keyupHandler = e => keysDown.delete(e.key.toLowerCase());
   window.addEventListener('keydown', keydownHandler);
@@ -141,8 +202,8 @@ function rematch() {
 }
 
 function setupRound(f1, f2) {
-  p1 = createPlayer(f1, 260, 1);
-  p2 = createPlayer(f2, 700, -1);
+  p1 = createPlayer(f1, 260, 1, p1CPUDifficulty);
+  p2 = createPlayer(f2, 700, -1, p2CPUDifficulty);
   timerFrames = ROUND_SECONDS * 60;
   roundActive = true;
   els.message.textContent = '';
@@ -311,16 +372,26 @@ function updateHitstun(player, fdt) {
 function update(fdt) {
   if (!roundActive) return;
 
-  const pad = readActiveGamepad();
-  const pad2Input = readPadInput(pad);
-  if (!!pad !== p2UsingPad) {
-    p2UsingPad = !!pad;
-    if (els.p2Mode) els.p2Mode.textContent = p2UsingPad ? 'Controller' : 'Keyboard';
+  let pad2Input = EMPTY_PAD_INPUT;
+  if (!p2.isCPU) {
+    const pad = readActiveGamepad();
+    pad2Input = readPadInput(pad);
+    if (!!pad !== p2UsingPad) {
+      p2UsingPad = !!pad;
+      if (els.p2Mode) els.p2Mode.textContent = p2UsingPad ? 'Controller' : 'Keyboard';
+    }
   }
 
-  updatePlayerMovement(p1, p2, KEYS.p1, null, fdt);
-  updatePlayerMovement(p2, p1, KEYS.p2, pad2Input, fdt);
-  tryAttackFromPad(p2, pad2Input, prevPad2Input);
+  const p1Input = p1.isCPU ? computeCPUInput(p1, p2, fdt) : null;
+  const p2Input = p2.isCPU ? computeCPUInput(p2, p1, fdt) : pad2Input;
+  const p1Map = p1.isCPU ? NO_KEYS : KEYS.p1;
+  const p2Map = p2.isCPU ? NO_KEYS : KEYS.p2;
+
+  updatePlayerMovement(p1, p2, p1Map, p1Input, fdt);
+  updatePlayerMovement(p2, p1, p2Map, p2Input, fdt);
+  // CPU attacks are fired directly inside computeCPUInput; only real pad
+  // input needs the held-flag edge-detection here.
+  if (!p2.isCPU) tryAttackFromPad(p2, pad2Input, prevPad2Input);
   prevPad2Input = pad2Input;
   separatePlayers();
   updateAttack(p1, p2, fdt);
@@ -329,8 +400,8 @@ function update(fdt) {
   updateHitstun(p2, fdt);
 
   // block state needs continuous down-hold to persist; drop to idle if released and no hitstun timer
-  if (p1.state === 'block' && !isDown(p1, KEYS.p1, null) && p1.hitstunTimer <= 0) p1.state = 'idle';
-  if (p2.state === 'block' && !isDown(p2, KEYS.p2, pad2Input) && p2.hitstunTimer <= 0) p2.state = 'idle';
+  if (p1.state === 'block' && !isDown(p1, p1Map, p1Input) && p1.hitstunTimer <= 0) p1.state = 'idle';
+  if (p2.state === 'block' && !isDown(p2, p2Map, p2Input) && p2.hitstunTimer <= 0) p2.state = 'idle';
 
   timerFrames -= fdt;
   const secs = Math.max(0, Math.ceil(timerFrames / 60));

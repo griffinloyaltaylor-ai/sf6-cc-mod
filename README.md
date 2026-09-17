@@ -43,6 +43,10 @@ network), any static file server works, for example `python3 -m http.server
 - **Controller support** — Player 2 auto-detects a connected gamepad
   (X/Y/A/B punches & kicks, LB/RB specials, RT super, stick/D-pad movement)
   with keyboard as automatic fallback.
+- **CPU opponents** — no second player needed. On the Versus screen, set
+  Player 2's control to CPU (Easy/Medium/Hard) instead of Human. The CPU
+  approaches, blocks sometimes, and throws normals/specials/supers, with
+  reaction speed and accuracy scaling by difficulty.
 
 ## Controls (shared keyboard, local versus)
 
