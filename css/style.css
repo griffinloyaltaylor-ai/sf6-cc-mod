@@ -141,6 +141,7 @@ h2 { text-align: center; }
 .hud-side { flex: 1; }
 .hud-side.right { direction: rtl; }
 .hud-side .name { font-weight: 700; margin-bottom: 4px; }
+.input-mode { display: inline-block; font-size: .7rem; color: var(--text-dim); background: #0d0f16; border: 1px solid #333a4f; border-radius: 10px; padding: 1px 8px; margin-bottom: 4px; }
 .healthbar, .meterbar { background: #0d0f16; border: 1px solid #333a4f; border-radius: 6px; height: 16px; overflow: hidden; direction: ltr; }
 .meterbar { height: 8px; margin-top: 4px; }
 .health-fill { height: 100%; width: 100%; background: linear-gradient(90deg, var(--good), #a7e83a); transition: width .15s ease; }

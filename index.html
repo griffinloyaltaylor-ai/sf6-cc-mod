@@ -100,6 +100,7 @@
       <div id="hud">
         <div class="hud-side">
           <div class="name" id="p1-name">P1</div>
+          <div class="input-mode" id="p1-mode">Keyboard</div>
           <div class="healthbar"><div id="p1-health" class="health-fill"></div></div>
           <div class="meterbar"><div id="p1-meter" class="meter-fill"></div></div>
         </div>
@@ -109,6 +110,7 @@
         </div>
         <div class="hud-side right">
           <div class="name" id="p2-name">P2</div>
+          <div class="input-mode" id="p2-mode">Keyboard</div>
           <div class="healthbar"><div id="p2-health" class="health-fill"></div></div>
           <div class="meterbar"><div id="p2-meter" class="meter-fill"></div></div>
         </div>
@@ -126,19 +128,19 @@
       <div class="modal-content">
         <h2>How To Play</h2>
         <table class="controls-table">
-          <tr><th></th><th>Player 1</th><th>Player 2</th></tr>
-          <tr><td>Move</td><td>A / D</td><td>&larr; / &rarr;</td></tr>
-          <tr><td>Jump</td><td>W</td><td>&uarr;</td></tr>
-          <tr><td>Block</td><td>S (hold)</td><td>&darr; (hold)</td></tr>
-          <tr><td>Light Punch</td><td>J</td><td>1</td></tr>
-          <tr><td>Heavy Punch</td><td>K</td><td>2</td></tr>
-          <tr><td>Light Kick</td><td>U</td><td>3</td></tr>
-          <tr><td>Heavy Kick</td><td>I</td><td>4</td></tr>
-          <tr><td>Special 1</td><td>H</td><td>5</td></tr>
-          <tr><td>Special 2</td><td>Y</td><td>6</td></tr>
-          <tr><td>Super (needs full meter)</td><td>T</td><td>7</td></tr>
+          <tr><th></th><th>Player 1 (keyboard)</th><th>Player 2 (keyboard)</th><th>Player 2 (controller)</th></tr>
+          <tr><td>Move</td><td>A / D</td><td>&larr; / &rarr;</td><td>Left stick / D-pad</td></tr>
+          <tr><td>Jump</td><td>W</td><td>&uarr;</td><td>Stick up / D-pad up</td></tr>
+          <tr><td>Block</td><td>S (hold)</td><td>&darr; (hold)</td><td>Stick down / D-pad down</td></tr>
+          <tr><td>Light Punch</td><td>J</td><td>1</td><td>X</td></tr>
+          <tr><td>Heavy Punch</td><td>K</td><td>2</td><td>Y</td></tr>
+          <tr><td>Light Kick</td><td>U</td><td>3</td><td>A</td></tr>
+          <tr><td>Heavy Kick</td><td>I</td><td>4</td><td>B</td></tr>
+          <tr><td>Special 1</td><td>H</td><td>5</td><td>LB</td></tr>
+          <tr><td>Special 2</td><td>Y</td><td>6</td><td>RB</td></tr>
+          <tr><td>Super (needs full meter)</td><td>T</td><td>7</td><td>RT</td></tr>
         </table>
-        <p class="hint">Best of 3 rounds. Build meter by landing/taking hits. This is a shared-screen local versus &mdash; both players play on one keyboard at once.</p>
+        <p class="hint">Best of 3 rounds. Build meter by landing/taking hits. Player 2 automatically switches to a connected controller (Xbox/PlayStation/generic USB pad all work) &mdash; press any button on it once the fight starts. No controller connected just falls back to Player 2's keyboard keys.</p>
         <button id="btn-close-howto">Close</button>
       </div>
     </div>

@@ -12,6 +12,15 @@ const KEYS = {
 };
 const ATTACK_SLOTS = ['lightPunch', 'heavyPunch', 'lightKick', 'heavyKick', 'special1', 'special2', 'super'];
 
+// Standard gamepad layout. Face buttons mirror a common fighting-game
+// pad scheme: X/Y = light/heavy punch, A/B = light/heavy kick, LB/RB =
+// specials, RT = super. Left stick or D-pad moves/jumps/blocks.
+const PAD_BUTTON_MAP = {
+  lightPunch: 2, heavyPunch: 3, lightKick: 0, heavyKick: 1, special1: 4, special2: 5, super: 7,
+};
+const PAD_DEADZONE = 0.4;
+const EMPTY_PAD_INPUT = { left: false, right: false, up: false, down: false, lightPunch: false, heavyPunch: false, lightKick: false, heavyKick: false, special1: false, special2: false, super: false };
+
 let ctx, canvas;
 let els = {};
 let p1, p2;
@@ -23,6 +32,8 @@ let matchWins = { p1: 0, p2: 0 };
 let animT = 0;
 let onMatchEnd = null;
 let keydownHandler, keyupHandler;
+let prevPad2Input = EMPTY_PAD_INPUT;
+let p2UsingPad = false;
 
 function maxHealthFor(fighter) {
   return Math.round(fighter.stats.health * 3);
@@ -53,6 +64,9 @@ export function initFight(fighter1, fighter2, domEls, matchEndCallback) {
   els.p2Wins.textContent = '0';
   els.rematchBtn.classList.add('hidden');
   els.message.textContent = '';
+  if (els.p1Mode) els.p1Mode.textContent = 'Keyboard';
+  p2UsingPad = !!readActiveGamepad();
+  if (els.p2Mode) els.p2Mode.textContent = p2UsingPad ? 'Controller' : 'Keyboard';
 
   setupRound(fighter1, fighter2);
 
@@ -67,6 +81,7 @@ export function initFight(fighter1, fighter2, domEls, matchEndCallback) {
   window.addEventListener('keydown', keydownHandler);
   window.addEventListener('keyup', keyupHandler);
 
+  prevPad2Input = EMPTY_PAD_INPUT;
   startLoop();
 }
 
@@ -76,6 +91,33 @@ export function stopFight() {
   if (keydownHandler) window.removeEventListener('keydown', keydownHandler);
   if (keyupHandler) window.removeEventListener('keyup', keyupHandler);
   keysDown.clear();
+}
+
+function readActiveGamepad() {
+  if (typeof navigator.getGamepads !== 'function') return null;
+  const pads = navigator.getGamepads();
+  for (const pad of pads) { if (pad && pad.connected) return pad; }
+  return null;
+}
+
+function readPadInput(pad) {
+  if (!pad) return EMPTY_PAD_INPUT;
+  const axX = pad.axes[0] || 0;
+  const axY = pad.axes[1] || 0;
+  const btn = i => { const b = pad.buttons[i]; return !!b && (b.pressed || b.value > 0.5); };
+  return {
+    left: axX < -PAD_DEADZONE || btn(14),
+    right: axX > PAD_DEADZONE || btn(15),
+    up: axY < -PAD_DEADZONE || btn(12),
+    down: axY > PAD_DEADZONE || btn(13),
+    lightPunch: btn(PAD_BUTTON_MAP.lightPunch),
+    heavyPunch: btn(PAD_BUTTON_MAP.heavyPunch),
+    lightKick: btn(PAD_BUTTON_MAP.lightKick),
+    heavyKick: btn(PAD_BUTTON_MAP.heavyKick),
+    special1: btn(PAD_BUTTON_MAP.special1),
+    special2: btn(PAD_BUTTON_MAP.special2),
+    super: btn(PAD_BUTTON_MAP.super),
+  };
 }
 
 export function rematch() {
@@ -96,18 +138,25 @@ function setupRound(f1, f2) {
   els.message.textContent = '';
 }
 
-function tryAttack(player, key, map) {
+function startAttackForSlot(player, slot) {
   if (player.state === 'attack' || player.state === 'hitstun' || player.state === 'ko') return;
+  const moveId = player.fighter.moves[slot];
+  const move = MOVES[moveId];
+  if (!move) return;
+  if (slot === 'super' && player.meter < 100) return;
+  player.attack = { move, slot, phase: 'startup', timer: move.startup, hitApplied: false };
+  player.state = 'attack';
+}
+
+function tryAttack(player, key, map) {
   for (const slot of ATTACK_SLOTS) {
-    if (map[slot] === key) {
-      const moveId = player.fighter.moves[slot];
-      const move = MOVES[moveId];
-      if (!move) return;
-      if (slot === 'super' && player.meter < 100) return;
-      player.attack = { move, slot, phase: 'startup', timer: move.startup, hitApplied: false };
-      player.state = 'attack';
-      return;
-    }
+    if (map[slot] === key) { startAttackForSlot(player, slot); return; }
+  }
+}
+
+function tryAttackFromPad(player, padInput, prevPadInput) {
+  for (const slot of ATTACK_SLOTS) {
+    if (padInput[slot] && !prevPadInput[slot]) startAttackForSlot(player, slot);
   }
 }
 
@@ -122,19 +171,20 @@ function startLoop() {
   frame();
 }
 
-function isDown(player, map) { return keysDown.has(map.down); }
+function isDown(player, map, padInput) { return keysDown.has(map.down) || (padInput && padInput.down); }
 
-function updatePlayerMovement(player, other, map) {
+function updatePlayerMovement(player, other, map, padInput) {
   const canAct = player.state !== 'attack' && player.state !== 'hitstun' && player.state !== 'ko';
   // auto-face opponent unless mid-action
   if (canAct) player.facing = other.x >= player.x ? 1 : -1;
 
   if (!canAct) {
     // still apply gravity/physics below
-  } else if (isDown(player, map) && player.grounded) {
+  } else if (isDown(player, map, padInput) && player.grounded) {
     player.state = 'block';
   } else {
-    const left = keysDown.has(map.left), right = keysDown.has(map.right);
+    const left = keysDown.has(map.left) || (padInput && padInput.left);
+    const right = keysDown.has(map.right) || (padInput && padInput.right);
     if (!player.grounded) {
       player.state = 'jump';
     } else if (left || right) {
@@ -144,7 +194,7 @@ function updatePlayerMovement(player, other, map) {
     } else {
       player.state = 'idle';
     }
-    if (keysDown.has(map.up) && player.grounded) {
+    if ((keysDown.has(map.up) || (padInput && padInput.up)) && player.grounded) {
       player.vy = JUMP_V;
       player.grounded = false;
       player.state = 'jump';
@@ -240,8 +290,18 @@ function updateHitstun(player) {
 
 function update() {
   if (!roundActive) return;
-  updatePlayerMovement(p1, p2, KEYS.p1);
-  updatePlayerMovement(p2, p1, KEYS.p2);
+
+  const pad = readActiveGamepad();
+  const pad2Input = readPadInput(pad);
+  if (!!pad !== p2UsingPad) {
+    p2UsingPad = !!pad;
+    if (els.p2Mode) els.p2Mode.textContent = p2UsingPad ? 'Controller' : 'Keyboard';
+  }
+
+  updatePlayerMovement(p1, p2, KEYS.p1, null);
+  updatePlayerMovement(p2, p1, KEYS.p2, pad2Input);
+  tryAttackFromPad(p2, pad2Input, prevPad2Input);
+  prevPad2Input = pad2Input;
   separatePlayers();
   updateAttack(p1, p2);
   updateAttack(p2, p1);
@@ -249,8 +309,8 @@ function update() {
   updateHitstun(p2);
 
   // block state needs continuous down-hold to persist; drop to idle if released and no hitstun timer
-  if (p1.state === 'block' && !isDown(p1, KEYS.p1) && p1.hitstunTimer <= 0) p1.state = 'idle';
-  if (p2.state === 'block' && !isDown(p2, KEYS.p2) && p2.hitstunTimer <= 0) p2.state = 'idle';
+  if (p1.state === 'block' && !isDown(p1, KEYS.p1, null) && p1.hitstunTimer <= 0) p1.state = 'idle';
+  if (p2.state === 'block' && !isDown(p2, KEYS.p2, pad2Input) && p2.hitstunTimer <= 0) p2.state = 'idle';
 
   timerFrames--;
   const secs = Math.max(0, Math.ceil(timerFrames / 60));

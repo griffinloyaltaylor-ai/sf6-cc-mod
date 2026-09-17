@@ -44,6 +44,8 @@ function startFightFromSelection() {
     canvas: document.getElementById('fight-canvas'),
     p1Name: document.getElementById('p1-name'),
     p2Name: document.getElementById('p2-name'),
+    p1Mode: document.getElementById('p1-mode'),
+    p2Mode: document.getElementById('p2-mode'),
     p1Health: document.getElementById('p1-health'),
     p2Health: document.getElementById('p2-health'),
     p1Meter: document.getElementById('p1-meter'),
