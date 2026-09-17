@@ -24,9 +24,12 @@ network), any static file server works, for example `python3 -m http.server
 - **Fighter Creator** — choose a premade fighting style (Rushdown, Grappler,
   Zoner, Brawler, Technical) as a starting point, then override any
   individual move (light/heavy punch/kick, 2 specials, 1 super) from the
-  full move pool. Customize gear (head/body/hands/feet/accessory + colors),
-  skin tone, hair color, and body proportions (height/build sliders).
-  Preview renders live in 3D.
+  full move pool. Pick a gender (changes base body shape) and a face preset
+  (Determined/Calm/Fierce/Cheerful/Stern). Customize gear across 6 slots —
+  hats/head, shirts, pants, gloves, shoes, accessories — each with several
+  styles and its own color, plus 7 hairstyles. Fine-tune body proportions
+  with Height/Build sliders and 6 detailed sliders (chest, stomach, biceps,
+  forearms, thighs, calves). Preview renders live in 3D.
 - **Roster** — fighters are saved to the browser's local storage. Create,
   edit, duplicate, or delete any fighter from the roster screen.
 - **Versus Mode** — pick any two saved fighters (including a mirror match)

@@ -7,8 +7,11 @@ let previewDirty = true;
 
 function markPreviewDirty() { previewDirty = true; }
 
-const GEAR_LABELS = { head: 'Head', body: 'Body', hands: 'Hands', feet: 'Feet', accessory: 'Accessory' };
+const GEAR_LABELS = { head: 'Hat / Head', body: 'Shirt', legwear: 'Pants', hands: 'Gloves', feet: 'Shoes', accessory: 'Accessory' };
 const STAT_LABELS = { health: 'Health', speed: 'Speed', power: 'Power', defense: 'Defense' };
+const PROPORTION_LABELS = { chest: 'Chest', stomach: 'Stomach', bicep: 'Biceps', forearm: 'Forearms', thigh: 'Thighs', calf: 'Calves' };
+const PROPORTION_RANGE = { min: 0.75, max: 1.4 };
+const FACE_LABELS = { determined: 'Determined', calm: 'Calm', fierce: 'Fierce', cheerful: 'Cheerful', stern: 'Stern' };
 
 function openCreator(fighterId, onLeave) {
   if (fighterId) {
@@ -20,6 +23,10 @@ function openCreator(fighterId, onLeave) {
     isNew = true;
   }
   if (!current.appearance.build) current.appearance.build = { height: 1, width: 1 };
+  if (!current.appearance.proportions) current.appearance.proportions = { chest: 1, stomach: 1, bicep: 1, forearm: 1, thigh: 1, calf: 1 };
+  if (!current.appearance.gender) current.appearance.gender = 'male';
+  if (!current.appearance.face) current.appearance.face = 'determined';
+  if (!current.appearance.gear.legwear) current.appearance.gear.legwear = { type: 'pants', color: '#2b2a3a' };
   document.getElementById('creator-heading').textContent = isNew ? 'Create New Fighter' : 'Edit Fighter';
   document.getElementById('btn-duplicate-fighter').disabled = isNew;
   document.getElementById('btn-delete-fighter').disabled = isNew;
@@ -59,11 +66,79 @@ function stopPreviewLoop() {
 
 function renderAll() {
   document.getElementById('fighter-name').value = current.name;
+  renderGender();
   renderStyleChips();
+  renderFace();
   renderStats();
   renderBuild();
+  renderProportions();
   renderGear();
   renderMoves();
+}
+
+function renderGender() {
+  const el = document.getElementById('gender-list');
+  el.innerHTML = '';
+  [['male', 'Male'], ['female', 'Female']].forEach(([id, label]) => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (current.appearance.gender === id ? ' active' : '');
+    chip.textContent = label;
+    chip.addEventListener('click', () => {
+      current.appearance.gender = id;
+      markPreviewDirty();
+      renderGender();
+    });
+    el.appendChild(chip);
+  });
+}
+
+function renderFace() {
+  const el = document.getElementById('face-list');
+  el.innerHTML = '';
+  Object.keys(FACE_LABELS).forEach(id => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (current.appearance.face === id ? ' active' : '');
+    chip.textContent = FACE_LABELS[id];
+    chip.addEventListener('click', () => {
+      current.appearance.face = id;
+      markPreviewDirty();
+      renderFace();
+    });
+    el.appendChild(chip);
+  });
+}
+
+function renderProportions() {
+  const el = document.getElementById('proportion-sliders');
+  el.innerHTML = '';
+  Object.keys(PROPORTION_LABELS).forEach(key => {
+    const row = document.createElement('div');
+    row.className = 'stat-row';
+    const label = document.createElement('label');
+    label.textContent = PROPORTION_LABELS[key];
+    const bgWrap = document.createElement('div');
+    bgWrap.className = 'stat-bar-bg';
+    const input = document.createElement('input');
+    input.type = 'range';
+    input.min = String(PROPORTION_RANGE.min);
+    input.max = String(PROPORTION_RANGE.max);
+    input.step = '0.01';
+    input.value = String(current.appearance.proportions[key]);
+    input.style.width = '100%';
+    const valSpan = document.createElement('span');
+    valSpan.className = 'stat-val';
+    valSpan.textContent = Math.round(current.appearance.proportions[key] * 100) + '%';
+    input.addEventListener('input', () => {
+      current.appearance.proportions[key] = Number(input.value);
+      valSpan.textContent = Math.round(input.value * 100) + '%';
+      markPreviewDirty();
+    });
+    bgWrap.appendChild(input);
+    row.appendChild(label);
+    row.appendChild(bgWrap);
+    row.appendChild(valSpan);
+    el.appendChild(row);
+  });
 }
 
 const BUILD_LABELS = { height: 'Height', width: 'Build' };
@@ -201,13 +276,25 @@ function renderGear() {
 
   const hairRow = document.createElement('div');
   hairRow.className = 'gear-row';
-  hairRow.innerHTML = `<label>Hair</label>`;
-  const hairPlaceholder = document.createElement('div');
+  const hairLabel = document.createElement('label');
+  hairLabel.textContent = 'Hair';
+  const hairSelect = document.createElement('select');
+  HAIR_STYLES.forEach(style => {
+    const o = document.createElement('option');
+    o.value = style; o.textContent = style.charAt(0).toUpperCase() + style.slice(1);
+    if (current.appearance.hair.style === style) o.selected = true;
+    hairSelect.appendChild(o);
+  });
+  hairSelect.addEventListener('change', () => {
+    current.appearance.hair.style = hairSelect.value;
+    markPreviewDirty();
+  });
   const hairColor = document.createElement('input');
   hairColor.type = 'color';
   hairColor.value = current.appearance.hair.color;
   hairColor.addEventListener('input', () => { current.appearance.hair.color = hairColor.value; markPreviewDirty(); });
-  hairRow.appendChild(hairPlaceholder);
+  hairRow.appendChild(hairLabel);
+  hairRow.appendChild(hairSelect);
   hairRow.appendChild(hairColor);
   el.appendChild(hairRow);
 }

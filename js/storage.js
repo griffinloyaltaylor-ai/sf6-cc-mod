@@ -10,12 +10,16 @@ function defaultFighter() {
     name: 'New Fighter',
     styleId: 'custom',
     appearance: {
+      gender: 'male',
+      face: 'determined',
       skinTone: '#e0ac69',
       hair: { style: 'short', color: '#2b2013' },
       build: { height: 1, width: 1 },
+      proportions: { chest: 1, stomach: 1, bicep: 1, forearm: 1, thigh: 1, calf: 1 },
       gear: {
         head: { type: 'none', color: '#cc3333' },
         body: { type: 'gi', color: '#3355cc' },
+        legwear: { type: 'pants', color: '#2b2a3a' },
         hands: { type: 'wraps', color: '#dddddd' },
         feet: { type: 'boots', color: '#333333' },
         accessory: { type: 'none', color: '#e0c030' },
